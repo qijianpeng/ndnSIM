@@ -37,6 +37,8 @@
 #include <boost/lexical_cast.hpp>
 #include <boost/ref.hpp>
 
+#include <ndn-cxx/util/snake-utils.hpp>
+
 NS_LOG_COMPONENT_DEFINE("ndn.Consumer");
 
 namespace ns3 {
@@ -181,8 +183,14 @@ Consumer::SendPacket()
     seq = m_seq++;
   }
 
-  //
+  //m_interestName here is Prefix "/"
   shared_ptr<Name> nameWithSequence = make_shared<Name>(m_interestName);
+  std::string dataName = "dataName";
+  nameWithSequence->append(dataName);
+  nameWithSequence->append("snake");
+  std::string functionName = "functionName";
+  nameWithSequence->append(functionName);
+  nameWithSequence->append("{\"cpu\":100, \"mem\":20}");
   nameWithSequence->appendSequenceNumber(seq);
   //
 
@@ -190,11 +198,13 @@ Consumer::SendPacket()
   shared_ptr<Interest> interest = make_shared<Interest>();
   interest->setNonce(m_rand->GetValue(0, std::numeric_limits<uint32_t>::max()));
   interest->setName(*nameWithSequence);
-  interest->setCanBePrefix(false);
+  interest->setCanBePrefix(true);
   time::milliseconds interestLifeTime(m_interestLifeTime.GetMilliSeconds());
   interest->setInterestLifetime(interestLifeTime);
-
+  ::ndn::snake::util::markFunctionAsUnexecuted(*interest);
   // NS_LOG_INFO ("Requesting Interest: \n" << *interest);
+  //NS_LOG_INFO(">>>>>>>>>Interest :" << *interest);
+  //NS_LOG_INFO(">>>>>>>>>Belong to SnakeSystem :" << ::ndn::snake::util::isBelong2SnakeSystem(*interest));
   NS_LOG_INFO("> Interest for " << seq);
 
   WillSendOutInterest(seq);
