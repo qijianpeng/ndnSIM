@@ -26,7 +26,6 @@
 
 #include "model/ndn-l3-protocol.hpp"
 #include "helper/ndn-fib-helper.hpp"
-#include <ndn-cxx/lp/tags.hpp>
 
 #include <memory>
 
@@ -106,11 +105,6 @@ Producer::OnInterest(shared_ptr<const Interest> interest)
   // dataName.appendVersion();
 
   auto data = make_shared<Data>();
-  auto functionTag = interest->getTag<lp::FunctionTag>();
-  if(functionTag != nullptr){
-    data->setTag(functionTag);
-    NS_LOG_INFO("Setting tag from interest to data: " << *functionTag);
-  }
   data->setName(dataName);
   data->setFreshnessPeriod(::ndn::time::milliseconds(m_freshness.GetMilliSeconds()));
 

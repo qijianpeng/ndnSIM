@@ -17,12 +17,12 @@
  * ndnSIM, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
  **/
 
-#ifndef NDN_CONSUMER_CBR_H
-#define NDN_CONSUMER_CBR_H
+#ifndef NDN_SNAKE_CONSUMER_CBR_H
+#define NDN_SNAKE_CONSUMER_CBR_H
 
 #include "ns3/ndnSIM/model/ndn-common.hpp"
 
-#include "ndn-consumer.hpp"
+#include "ndn-snake-consumer.hpp"
 
 namespace ns3 {
 namespace ndn {
@@ -31,7 +31,7 @@ namespace ndn {
  * @ingroup ndn-apps
  * @brief Ndn application for sending out Interest packets at a "constant" rate (Poisson process)
  */
-class SnakeConsumerCbr : public Consumer {
+class SnakeConsumerCbr : public SnakeConsumer {
 public:
   static TypeId
   GetTypeId();
@@ -64,7 +64,11 @@ protected:
    */
   std::string
   GetRandomize() const;
-
+  // virtual bool
+  // ackSnakeMetadata(shared_ptr<const Data> data) = 0;
+  
+  // virtual bool
+  // isSnakeMetadata(shared_ptr<const Data> data) = 0;
 protected:
   double m_frequency; // Frequency of interest packets (in hertz)
   bool m_firstTime;

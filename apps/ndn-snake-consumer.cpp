@@ -18,6 +18,8 @@
  **/
 
 #include "ndn-snake-consumer.hpp"
+#include "ndn-cxx/name-component.hpp"
+
 #include "ns3/ptr.h"
 #include "ns3/log.h"
 #include "ns3/simulator.h"
@@ -37,11 +39,14 @@
 #include <boost/lexical_cast.hpp>
 #include <boost/ref.hpp>
 
+#include <ndn-cxx/util/snake-utils.hpp>
+#include "snake-parameters.hpp"
+
 NS_LOG_COMPONENT_DEFINE("ndn.SnakeConsumer");
 
 namespace ns3 {
 namespace ndn {
-
+namespace snake_util = ::ndn::snake::util;
 NS_OBJECT_ENSURE_REGISTERED(SnakeConsumer);
 
 TypeId
@@ -56,7 +61,7 @@ SnakeConsumer::GetTypeId(void)
 
       .AddAttribute("Prefix", "Name of the Interest", StringValue("/"),
                     MakeNameAccessor(&SnakeConsumer::m_interestName), MakeNameChecker())
-      .AddAttribute("LifeTime", "LifeTime for interest packet", StringValue("4s"),
+      .AddAttribute("LifeTime", "LifeTime for interest packet", StringValue("3s"),
                     MakeTimeAccessor(&SnakeConsumer::m_interestLifeTime), MakeTimeChecker())
 
       .AddAttribute("RetxTimer",
@@ -68,12 +73,12 @@ SnakeConsumer::GetTypeId(void)
       .AddTraceSource("LastRetransmittedInterestDataDelay",
                       "Delay between last retransmitted Interest and received Data",
                       MakeTraceSourceAccessor(&SnakeConsumer::m_lastRetransmittedInterestDataDelay),
-                      "ns3::ndn::Consumer::LastRetransmittedInterestDataDelayCallback")
+                      "ns3::ndn::SnakeConsumer::LastRetransmittedInterestDataDelayCallback")
 
       .AddTraceSource("FirstInterestDataDelay",
                       "Delay between first transmitted Interest and received Data",
                       MakeTraceSourceAccessor(&SnakeConsumer::m_firstInterestDataDelay),
-                      "ns3::ndn::Consumer::FirstInterestDataDelayCallback");
+                      "ns3::ndn::SnakeConsumer::FirstInterestDataDelayCallback");
 
   return tid;
 }
@@ -155,14 +160,9 @@ SnakeConsumer::StopApplication() // Called at time specified by Stop
   App::StopApplication();
 }
 
-void
-SnakeConsumer::SendPacket()
+uint32_t
+SnakeConsumer::getSeq()
 {
-  if (!m_active)
-    return;
-
-  NS_LOG_FUNCTION_NOARGS();
-
   uint32_t seq = std::numeric_limits<uint32_t>::max(); // invalid
 
   while (m_retxSeqs.size()) {
@@ -174,28 +174,44 @@ SnakeConsumer::SendPacket()
   if (seq == std::numeric_limits<uint32_t>::max()) {
     if (m_seqMax != std::numeric_limits<uint32_t>::max()) {
       if (m_seq >= m_seqMax) {
-        return; // we are totally done
+        return std::numeric_limits<uint32_t>::max(); // we are totally done
       }
     }
 
     seq = m_seq++;
   }
+  return seq;
+}
+void
+SnakeConsumer::SendPacket()
+{
+  if (!m_active)
+    return;
 
-  //TODO(qjp): modify this line to snake pattern.
+  NS_LOG_FUNCTION_NOARGS();
+  
+
+  uint32_t seq = getSeq();
+  if(seq == std::numeric_limits<uint32_t>::max()) return;
+
   shared_ptr<Name> nameWithSequence = make_shared<Name>(m_interestName);
+  std::string dataName = "dataName";
+  nameWithSequence->append(dataName);
+  nameWithSequence->append("snake");
+  std::string functionName = "functionName";
+  nameWithSequence->append(functionName);
   nameWithSequence->appendSequenceNumber(seq);
-  //
 
-  // shared_ptr<Interest> interest = make_shared<Interest> ();
   shared_ptr<Interest> interest = make_shared<Interest>();
   interest->setNonce(m_rand->GetValue(0, std::numeric_limits<uint32_t>::max()));
   interest->setName(*nameWithSequence);
-  interest->setCanBePrefix(false);
+  interest->setCanBePrefix(true);
   time::milliseconds interestLifeTime(m_interestLifeTime.GetMilliSeconds());
   interest->setInterestLifetime(interestLifeTime);
-  // NS_LOG_INFO ("Requesting Interest: \n" << *interest);
-  NS_LOG_INFO("> Interest for " << seq);
 
+  makeMetadataRequestInterest(interest);
+  
+  NS_LOG_INFO("> Interest for " << seq);
   WillSendOutInterest(seq);
 
   m_transmittedInterests(interest, this, m_face);
@@ -204,10 +220,92 @@ SnakeConsumer::SendPacket()
   ScheduleNextPacket();
 }
 
+void
+SnakeConsumer::makeMetadataRequestInterest(shared_ptr<Interest> interest)
+{
+  
+  /**Mark Function state as unexecuted*/
+  snake_util::tryToMarkAsFunction(*interest);
+  /**Function requirements(JSON formate)*/
+  ::ndn::snake::Parameters paras;
+	  paras.Initialize("{\"cpu\":100, \"mem\":20}");
+  Block block = ::ndn::encoding::makeStringBlock(::ndn::tlv::ApplicationParameters,
+                                                 paras.Serialize());
+  interest->setApplicationParameters(block);
+  /**Inject session id to establish session*/
+  uint64_t currentNodeUuid = snake_util::getCurrentNodeSysInfo()->getUuid();
+  snake_util::injectSessionId(*interest, currentNodeUuid, snake_util::xorOperator);
+
+  NS_LOG_DEBUG("> Interest for metadata : " << ::ndn::encoding::readString(interest->getApplicationParameters()));
+
+}
+
+void
+ SnakeConsumer::makeResultRequestInterest(shared_ptr<Interest> minCostNotifyInterest, 
+  shared_ptr<const Data> metadata)
+{
+  auto minCostMarkerTagPtr = metadata->getTag<lp::MinCostMarkerTag>();
+  // if(nullptr == minCostMarkerTagPtr) {
+  //   return false;
+  // }
+  //TODO Using the established session is correct way.
+  // auto combinedSessionIdPtr = data.getTag<lp::SessionTag>();
+  // Name sessionName = snake_util::recombineNameWithSessionId(data->getName(), *combinedSessionIdPtr);
+  /**Transfer min cost marker tag*/
+  minCostNotifyInterest->setTag(minCostMarkerTagPtr);
+  /**Mark Function state as unexecuted*/
+  snake_util::tryToMarkAsFunction(*minCostNotifyInterest);
+  /**Function requirements(JSON formate)*/
+  const ndn::Block* funcParasBlock = metadata->getMetaInfo().findAppMetaInfo(::ndn::lp::tlv::AppParasInData);
+  if(nullptr != funcParasBlock){
+    std::string parasStr = ::ndn::encoding::readString(*funcParasBlock);
+    ::ndn::snake::Parameters paras;
+	  paras.Initialize(parasStr);
+    minCostNotifyInterest->setApplicationParameters(
+      ::ndn::encoding::makeStringBlock(::ndn::tlv::ApplicationParameters, paras.Serialize()));
+    NS_LOG_INFO("> With function parameters: " << paras.Serialize());
+  }
+  NS_LOG_INFO("> Interest for Request Result: " << minCostNotifyInterest->getName().toUri());
+}
+
 ///////////////////////////////////////////////////
 //          Process incoming packets             //
 ///////////////////////////////////////////////////
+bool
+SnakeConsumer::isSnakeMetadata(shared_ptr<const Data> data)
+{
+  auto metaDataTag = data->getTag<lp::MetaDataTag>();
+  return nullptr != metaDataTag;
+}
 
+bool
+SnakeConsumer::ackSnakeMetadata(shared_ptr<const Data> metadata)
+{
+
+  if (!m_active)
+    return false;
+
+  NS_LOG_FUNCTION_NOARGS();
+
+  // uint32_t seq = getSeq();
+  // if(seq == 0) return;
+
+  ::ndn::Name namePrefix = metadata->getName().getSubName(0,4); //< /dataname/snake/functionname/seq
+  // shared_ptr<Name> nameWithSequence = make_shared<Name>(namePrefix);
+
+  shared_ptr<Interest> interest = make_shared<Interest>();
+  interest->setNonce(m_rand->GetValue(0, std::numeric_limits<uint32_t>::max()));
+  interest->setName(namePrefix);
+  interest->setCanBePrefix(true);
+  time::milliseconds interestLifeTime(m_interestLifeTime.GetMilliSeconds());
+  interest->setInterestLifetime(interestLifeTime);
+
+  makeResultRequestInterest(interest, metadata);
+
+  m_transmittedInterests(interest, this, m_face);
+  m_appLink->onReceiveInterest(*interest);
+  return true;
+}
 void
 SnakeConsumer::OnData(shared_ptr<const Data> data)
 {
@@ -221,34 +319,39 @@ SnakeConsumer::OnData(shared_ptr<const Data> data)
   // NS_LOG_INFO ("Received content object: " << boost::cref(*data));
 
   // This could be a problem......
-  uint32_t seq = data->getName().at(-1).toSequenceNumber();
+  uint32_t seq = data->getName().at(-2).toSequenceNumber();
   NS_LOG_INFO("< DATA for " << seq);
-
+  if(data->getTag<lp::FunctionTag>()) NS_LOG_DEBUG("Results: " << data->getContent().value());
   int hopCount = 0;
   auto hopCountTag = data->getTag<lp::HopCountTag>();
   if (hopCountTag != nullptr) { // e.g., packet came from local node's cache
     hopCount = *hopCountTag;
   }
   NS_LOG_DEBUG("Hop count: " << hopCount);
+  
+  if(isSnakeMetadata(data)){
+    NS_LOG_DEBUG("Entering ack snake metadata pipeline.");
+    ackSnakeMetadata(data);
+  } else {
+    SeqTimeoutsContainer::iterator entry = m_seqLastDelay.find(seq);
+    if (entry != m_seqLastDelay.end()) {
+      m_lastRetransmittedInterestDataDelay(this, seq, Simulator::Now() - entry->time, hopCount);
+    }
 
-  SeqTimeoutsContainer::iterator entry = m_seqLastDelay.find(seq);
-  if (entry != m_seqLastDelay.end()) {
-    m_lastRetransmittedInterestDataDelay(this, seq, Simulator::Now() - entry->time, hopCount);
+    entry = m_seqFullDelay.find(seq);
+    if (entry != m_seqFullDelay.end()) {
+      m_firstInterestDataDelay(this, seq, Simulator::Now() - entry->time, m_seqRetxCounts[seq], hopCount);
+    }
+
+    m_seqRetxCounts.erase(seq);
+    m_seqFullDelay.erase(seq);
+    m_seqLastDelay.erase(seq);
+
+    m_seqTimeouts.erase(seq);
+    m_retxSeqs.erase(seq);
+
+    m_rtt->AckSeq(SequenceNumber32(seq));
   }
-
-  entry = m_seqFullDelay.find(seq);
-  if (entry != m_seqFullDelay.end()) {
-    m_firstInterestDataDelay(this, seq, Simulator::Now() - entry->time, m_seqRetxCounts[seq], hopCount);
-  }
-
-  m_seqRetxCounts.erase(seq);
-  m_seqFullDelay.erase(seq);
-  m_seqLastDelay.erase(seq);
-
-  m_seqTimeouts.erase(seq);
-  m_retxSeqs.erase(seq);
-
-  m_rtt->AckSeq(SequenceNumber32(seq));
 }
 
 void

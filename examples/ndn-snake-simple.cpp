@@ -40,6 +40,8 @@
 #include "ns3/core-module.h"
 #include "ns3/network-module.h"
 #include "ns3/point-to-point-module.h"
+#include "ns3/point-to-point-layout-module.h"
+
 #include "ns3/ndnSIM-module.h"
 #include "ns3/computation-module.h"
 namespace ns3 {
@@ -79,8 +81,12 @@ main(int argc, char* argv[])
   // Creating nodes
   NodeContainer nodes;
   nodes.Create(3);
+  //Installing computation model.
   ComputationHelper computation;
   computation.Install(nodes);
+  Config::Set("/NodeList/0/$ns3::ComputationModel/SystemStateInfo", SysInfoValue(SysInfo(100, 100)));
+  Config::Set("/NodeList/1/$ns3::ComputationModel/SystemStateInfo", SysInfoValue(SysInfo(10000, 10000)));
+  Config::Set("/NodeList/2/$ns3::ComputationModel/SystemStateInfo", SysInfoValue(SysInfo(2000, 8000)));
   // Connecting nodes using two links
   PointToPointHelper p2p;
   p2p.Install(nodes.Get(0), nodes.Get(1));
@@ -89,8 +95,6 @@ main(int argc, char* argv[])
   ndn::StackHelper ndnHelper;
   ndnHelper.SetDefaultRoutes(true);
   ndnHelper.InstallAll();
-  //TODO(qjp) Set configurations to different nodes.
-  //Config::Set("/NodeList/0/$ns3::ndn::ContentStore/MaxSize", UintegerValue (1));
   // Choosing forwarding strategy
   ndn::StrategyChoiceHelper::InstallAll("/", "/localhost/nfd/strategy/multicast");
 
@@ -107,7 +111,7 @@ main(int argc, char* argv[])
   apps.Stop(Seconds(10.0)); // stop the consumer app at 10 seconds mark
 
   // Producer
-  ndn::AppHelper producerHelper("ns3::ndn::Producer");
+  ndn::AppHelper producerHelper("ns3::ndn::SnakeProducer");
   // Producer will reply to all requests starting with /prefix
   //producerHelper.SetPrefix("/prefix");
   producerHelper.SetPrefix("/");

@@ -79,6 +79,29 @@ public:
   void
   SendPacket();
 
+  bool
+  ackSnakeMetadata(shared_ptr<const Data> data);
+  
+  bool
+  isSnakeMetadata(shared_ptr<const Data> data);
+  /**
+   * \brief Make a metadata request interest
+   * 
+   * \param interest [in&out]
+   */
+  void
+  makeMetadataRequestInterest(shared_ptr<Interest> interest);
+
+  /**
+   * \brief Make a result request interest
+   * 
+   * \param interest [in&out]
+   */
+  void
+  makeResultRequestInterest(shared_ptr<Interest> minCostNotifyInterest, shared_ptr<const Data> metadata);
+
+  uint32_t
+  getSeq();
   /**
    * @brief An event that is fired just before an Interest packet is actually send out (send is
    *inevitable)

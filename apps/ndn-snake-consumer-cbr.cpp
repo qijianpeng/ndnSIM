@@ -42,7 +42,7 @@ SnakeConsumerCbr::GetTypeId(void)
   static TypeId tid =
     TypeId("ns3::ndn::SnakeConsumerCbr")
       .SetGroupName("Ndn")
-      .SetParent<Consumer>()
+      .SetParent<SnakeConsumer>()
       .AddConstructor<SnakeConsumerCbr>()
 
       .AddAttribute("Frequency", "Frequency of interest packets", StringValue("1.0"),
