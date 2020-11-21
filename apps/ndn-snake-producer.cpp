@@ -18,6 +18,11 @@
  **/
 
 #include "ndn-snake-producer.hpp"
+
+#include "ndn-cxx/snake/fm/snake-metadata.hpp"
+#include "ndn-cxx/snake/fm/metadata-wrapper.hpp"
+
+
 #include "ns3/log.h"
 #include "ns3/string.h"
 #include "ns3/uinteger.h"
@@ -39,7 +44,7 @@ namespace ndn {
 namespace snake_util = ::ndn::snake::util;
 
 NS_OBJECT_ENSURE_REGISTERED(SnakeProducer);
-
+static  ::ndn::snake::MetadataWrapper metadataWrapper("{\"filetype\":1, \"size\":10240}");
 TypeId
 SnakeProducer::GetTypeId(void)
 {
@@ -140,11 +145,13 @@ SnakeProducer::ackMetadata(shared_ptr<const Interest> interest)
                 << ", SessionId: " << *(data->getTag<lp::SessionTag>()));
   }
   data->setName(dataName);
-  data->setContent(make_shared< ::ndn::Buffer>(m_virtualPayloadSize));
+  // data->setContent(make_shared< ::ndn::Buffer>(m_virtualPayloadSize));
   data->setFreshnessPeriod(::ndn::time::milliseconds(m_freshness.GetMilliSeconds()));
   
+  // ::ndn::snake::MetadataWrapper metadataWrapper("{\"filetype\":1, \"size\":10240}");
+
   ::ndn::MetaInfo metaInfo;
-  metaInfo.addAppMetaInfo(::ndn::encoding::makeStringBlock(lp::tlv::MetaData, "{\"filetype\":1, \"size\":10240}"));
+  metaInfo.addAppMetaInfo(::ndn::encoding::makeStringBlock(lp::tlv::MetaData, metadataWrapper.Serialize()));
   if(interest->hasApplicationParameters()){
     Block funcParasBlock = interest->getApplicationParameters();
     std::string funcParas = ::ndn::encoding::readString(funcParasBlock);
@@ -191,8 +198,19 @@ SnakeProducer::OnInterest(shared_ptr<const Interest> interest)
   Name dataName(interest->getName());
   // dataName.append(m_postfix);
   // dataName.appendVersion();
-
+  auto minCostMarkerTagPtr = interest->getTag<lp::MinCostMarkerTag>();
   auto data = make_shared<Data>();
+  data->setTag(minCostMarkerTagPtr);
+  auto functionTag = interest->getTag<lp::FunctionTag>();
+  if(functionTag != nullptr){
+    data->setTag(functionTag);
+    NS_LOG_DEBUG("Marking a function tag into data: " << *(data->getTag<lp::FunctionTag>()));
+  }
+  // auto sessionTag = interest->getTag<lp::SessionTag>();
+  // if(sessionTag != nullptr){
+  //   data->setTag(sessionTag);
+  // }
+
   // auto functionTag = interest->getTag<lp::FunctionTag>();
   // if(functionTag != nullptr){
   //   data->setTag(functionTag);
@@ -208,8 +226,11 @@ SnakeProducer::OnInterest(shared_ptr<const Interest> interest)
   // }
   data->setName(dataName);
   data->setFreshnessPeriod(::ndn::time::milliseconds(m_freshness.GetMilliSeconds()));
-  data->setContent(::ndn::encoding::makeStringBlock(::ndn::tlv::Content, "original data content"));
-  // data->setContent(make_shared< ::ndn::Buffer>(m_virtualPayloadSize));
+
+  //data->setContent(::ndn::encoding::makeStringBlock(::ndn::tlv::Content, "original data content"));
+  uint64_t virtualPayload = metadataWrapper.getMetadata()->getValue<uint64_t>("size");
+  data->setContent(make_shared< ::ndn::Buffer>(virtualPayload));
+
   Signature signature;
   SignatureInfo signatureInfo(static_cast< ::ndn::tlv::SignatureTypeValue>(255));
 
