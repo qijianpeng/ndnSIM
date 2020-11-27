@@ -12,7 +12,7 @@ import argparse
 ######################################################################
 ######################################################################
 ######################################################################
-
+# `python run.py -s convert-topologies` to run.
 parser = argparse.ArgumentParser(description='Simulation runner')
 parser.add_argument('scenarios', metavar='scenario', type=str, nargs='*',
                     help='Scenario to run')
@@ -87,7 +87,7 @@ class ConvertTopologies (Processor):
 
         for run in runs:
             try:
-                os.mkdir ("topologies/bw-delay-rand-%d" % run)
+                os.mkdir ("topologies/bw-delay-node-resource-rand-%d" % run)
             except:
                 pass # ignore the error
 
@@ -97,7 +97,7 @@ class ConvertTopologies (Processor):
                 cmdline = ["../../../build/src/ndnSIM/examples/ns3.30.1-rocketfuel-maps-cch-to-annotaded-debug",
                            "--topology=topologies/rocketfuel_maps_cch/%s.cch" % topology,
                            "--run=%d" % run,
-                           "--output=topologies/bw-delay-rand-%d/%s" % (run, topology),
+                           "--output=topologies/bw-delay-node-resource-rand-%d/%s" % (run, topology),
                            "--buildGraph=%d" % self.buildGraph,
                            "--keepLargestComponent=1",
                            "--connectBackbones=1",
@@ -116,16 +116,16 @@ class ConvertTopologies (Processor):
 try:
     conversion = ConvertTopologies (name="convert-topologies",
                                     runs=[1],
-                                    topologies=["1221.r0",
-                                                # "1239.r1",
-                                                # "1755.r1",
-                                                # "2914.r1",
-                                                # "3257.r1",
-                                                # "3356.r1",
-                                                # "3967.r1",
-                                                # "4755.r1",
-                                                # "6461.r1",
-                                                "7018.r0",],
+                                    topologies=["1221.r1",
+                                                "1239.r1",
+                                                "1755.r1",
+                                                "2914.r1",
+                                                "3257.r1",
+                                                "3356.r1",
+                                                "3967.r1",
+                                                "4755.r1",
+                                                "6461.r1",
+                                                "7018.r1",],
                                     buildGraph = True)
     conversion.run ()
 

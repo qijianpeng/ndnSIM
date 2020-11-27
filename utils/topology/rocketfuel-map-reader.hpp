@@ -26,6 +26,8 @@
 
 #include "ns3/net-device-container.h"
 #include "ns3/data-rate.h"
+#include "ns3/data-size.h"
+#include "ns3/cpu-size.h"
 
 #include <set>
 #include <boost/graph/adjacency_list.hpp>
@@ -58,6 +60,27 @@ struct RocketfuelParams {
 
   string maxg2cBandwidth;
   string maxg2cDelay;
+
+  //parameters for Backbone CPU
+  string maxbCPU;
+  string minbCPU;
+  //parameters for Gateway CPU
+  string maxgCPU;
+  string mingCPU;
+  //parameters for Client CPU
+  string maxcCPU;
+  string mincCPU;
+
+  //parameters for Backbone Mem
+  string maxbMem;
+  string minbMem;
+  //parameters for Gateway Mem
+  string maxgMem;
+  string mingMem;
+  //parameters for Client Mem
+  string maxcMem;
+  string mincMem;
+
 };
 
 /**
@@ -74,8 +97,7 @@ struct RocketfuelParams {
  * - backbone nodes (all the rest)
  *
  * As some of the .cch files do not give a connected network graph, this reader also allows to keep
- *only the largest connected
- * network graph component.
+ * only the largest connected network graph component.
  */
 class RocketfuelMapReader : public AnnotatedTopologyReader {
 public:
@@ -136,6 +158,13 @@ private:
   void
   CreateLink(string nodeName1, string nodeName2, double averageRtt, const string& minBw,
              const string& maxBw, const string& minDelay, const string& maxDelay);
+  
+  CPUSize
+  CreateCPU(const string& minCPU, const string& maxCPU);
+  
+  DataSize
+  CreateMem(const string& minMem, const string& maxMem);
+
   void
   KeepOnlyBiggestConnectedComponent();
 
@@ -169,6 +198,7 @@ private:
                                 edgeProperty> Graph;
 
   typedef map<string, Traits::vertex_descriptor> node_map_t;
+  map<string, string> node_comment; //< node-id, comment
   node_map_t m_graphNodes;
 
   Graph m_graph;
@@ -179,6 +209,9 @@ private:
 private:
   void
   assignGw(Traits::vertex_descriptor vertex, uint32_t degree, node_type_t nodeType);
+
+  string
+  CreateResourcesJSON(const RocketfuelParams& params, node_type_t type);
 }; // end class RocketfuelMapReader
 
 }  // end namespace ns3

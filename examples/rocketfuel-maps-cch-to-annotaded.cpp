@@ -125,6 +125,22 @@ int main (int argc, char**argv)
   params.maxg2cBandwidth ="3Mbps";
   params.maxg2cDelay = "10ms";
 
+  params.maxbCPU = "4GHz";
+  params.minbCPU = "3GHz";
+  params.maxgCPU = "3GHz";
+  params.mingCPU = "2GHz";
+  params.maxcCPU = "2GHz";
+  params.mincCPU = "500MHz";
+
+
+  params.maxbMem = "128Gb";
+  params.minbMem = "32GB";
+  params.maxgMem = "32Gb";
+  params.mingMem = "8GB";
+  params.maxcMem = "8Gb";
+  params.mincMem = "2GB";
+
+
   RocketfuelMapReader topologyReader ("/", 1.0);
   topologyReader.SetFileName (input);
   NodeContainer nodes = topologyReader.Read (params, keepLargestComponent, connectBackbones);

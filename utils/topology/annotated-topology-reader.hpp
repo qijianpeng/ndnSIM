@@ -97,6 +97,13 @@ public:
    */
   virtual void
   SetMobilityModel(const std::string& model);
+  
+  /**
+   * \brief Set computation model to be used on nodes
+   * \param model class name of the model
+   */
+  virtual void
+  SetComputationModel(const std::string& model);
 
   /**
    * \brief Apply OSPF metric on Ipv4 (if exists) and Ccnx (if exists) stacks
@@ -145,6 +152,7 @@ private:
   Ptr<UniformRandomVariable> m_randY;
 
   ObjectFactory m_mobilityFactory;
+  ObjectFactory m_computationFactory;
   double m_scale;
 
   uint32_t m_requiredPartitions;

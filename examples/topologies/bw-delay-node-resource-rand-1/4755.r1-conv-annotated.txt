@@ -1,0 +1,114 @@
+# any empty lines and lines starting with '#' symbol is ignored
+
+# The file should contain exactly two sections: router and link, each starting with the corresponding keyword
+
+# router section defines topology nodes and their relative positions (e.g., to use in visualizer)
+router
+
+# each line in this section represents one router and should have the following data
+# node  comment     yPos    xPos
+gw-112	{"mem":"15441777987544669176b","cpu":"923242817Hz"}	0	0
+gw-472	{"mem":"6868943955980278881b","cpu":"1246690805Hz"}	0	0
+gw-262	{"mem":"14659554492330192538b","cpu":"820041768Hz"}	0	0
+gw-466	{"mem":"993842192869722053b","cpu":"616489308Hz"}	0	0
+gw-230	{"mem":"6514510398180803361b","cpu":"1705465692Hz"}	0	0
+gw-462	{"mem":"14538975229935581505b","cpu":"558294678Hz"}	0	0
+gw-456	{"mem":"16535275310754302946b","cpu":"1323687184Hz"}	0	0
+gw-471	{"mem":"13925503505725958613b","cpu":"1323652734Hz"}	0	0
+gw-463	{"mem":"17349142919028719247b","cpu":"629145310Hz"}	0	0
+gw-493	{"mem":"13542504500203540609b","cpu":"545583530Hz"}	0	0
+leaf-469	{"mem":"1680180870274606594b","cpu":"891249463Hz"}	0	0
+leaf-470	{"mem":"1288156015517541706b","cpu":"1712306641Hz"}	0	0
+leaf-91	{"mem":"12617534718394847939b","cpu":"806485719Hz"}	0	0
+leaf-108	{"mem":"2902697748800515202b","cpu":"877941579Hz"}	0	0
+leaf-109	{"mem":"195283463089418420b","cpu":"1036691822Hz"}	0	0
+leaf-60	{"mem":"5736326569800922769b","cpu":"910206080Hz"}	0	0
+leaf-113	{"mem":"3679013417841002095b","cpu":"846094096Hz"}	0	0
+leaf-191	{"mem":"16037969215885377517b","cpu":"1616553623Hz"}	0	0
+leaf-118	{"mem":"10827379769285468587b","cpu":"1464768474Hz"}	0	0
+leaf-190	{"mem":"8348726269880736926b","cpu":"1673375504Hz"}	0	0
+leaf-115	{"mem":"12012713969907188896b","cpu":"1574851008Hz"}	0	0
+leaf-249	{"mem":"12208183426706938442b","cpu":"1080642899Hz"}	0	0
+leaf-473	{"mem":"2263171899837252321b","cpu":"879215862Hz"}	0	0
+leaf-467	{"mem":"16067396828621796621b","cpu":"933950855Hz"}	0	0
+leaf-552	{"mem":"9872165754747601309b","cpu":"1029204889Hz"}	0	0
+leaf-553	{"mem":"1371617796676170671b","cpu":"1857952585Hz"}	0	0
+leaf-554	{"mem":"6336212726072031150b","cpu":"1143388797Hz"}	0	0
+leaf-496	{"mem":"8453386551274604937b","cpu":"638247498Hz"}	0	0
+leaf-497	{"mem":"2810191430852358871b","cpu":"521675357Hz"}	0	0
+leaf-483	{"mem":"16371202783061357025b","cpu":"1037965761Hz"}	0	0
+leaf-465	{"mem":"11681664544014070219b","cpu":"1332831995Hz"}	0	0
+leaf-480	{"mem":"14876359690744562268b","cpu":"1148799630Hz"}	0	0
+leaf-482	{"mem":"15291730770523045088b","cpu":"642755998Hz"}	0	0
+leaf-500	{"mem":"5627314762530648513b","cpu":"1481409212Hz"}	0	0
+leaf-464	{"mem":"14772636847503128281b","cpu":"1017932850Hz"}	0	0
+leaf-490	{"mem":"15069336191141584894b","cpu":"1090379326Hz"}	0	0
+leaf-498	{"mem":"18017536800231746888b","cpu":"1102736394Hz"}	0	0
+leaf-530	{"mem":"214476865949908225b","cpu":"1059587737Hz"}	0	0
+# link section defines point-to-point links between nodes and characteristics of these links
+
+link
+
+# Each line should be in the following format (only first two are required, the rest can be omitted)
+# srcNode   dstNode     bandwidth   metric  delay   queue
+# bandwidth: link bandwidth
+# metric: routing metric
+# delay:  link delay
+# queue:  MaxPackets for transmission queue on the link (both directions)
+leaf-60	gw-112	2887797bps	34	27997us	83	
+leaf-60	gw-472	2670664bps	37	64456us	76	
+leaf-91	gw-112	1154733bps	86	45611us	33	
+leaf-91	gw-262	2667492bps	37	13443us	76	
+leaf-91	gw-472	1000219bps	99	51684us	29	
+leaf-108	gw-112	2073743bps	48	45997us	59	
+leaf-108	gw-472	1182039bps	84	31119us	34	
+leaf-109	gw-112	1422081bps	70	28816us	41	
+leaf-109	gw-472	2890830bps	34	58362us	83	
+leaf-113	gw-112	2878279bps	34	34826us	82	
+leaf-113	gw-262	2682276bps	37	52946us	77	
+leaf-113	gw-472	2600771bps	38	68956us	74	
+leaf-115	gw-112	2497706bps	40	15531us	71	
+leaf-115	gw-472	2012327bps	49	29988us	58	
+leaf-118	gw-112	2992034bps	33	58589us	86	
+leaf-190	gw-112	1404138bps	71	57144us	40	
+leaf-190	gw-472	1797780bps	55	52511us	52	
+leaf-191	gw-112	1234121bps	81	16799us	36	
+leaf-191	gw-472	1284010bps	77	46346us	37	
+gw-230	gw-112	19490208bps	5	9131us	554	
+gw-230	leaf-249	1954522bps	51	32485us	56	
+gw-230	gw-456	11701216bps	8	7010us	333	
+gw-230	leaf-467	1170858bps	85	50287us	34	
+gw-230	gw-471	17837522bps	5	8208us	507	
+gw-230	leaf-552	1113749bps	89	38496us	32	
+gw-230	leaf-553	1784268bps	56	44693us	51	
+gw-230	leaf-554	1178931bps	84	63673us	34	
+leaf-249	gw-472	1842056bps	54	49104us	53	
+gw-262	gw-466	13033192bps	7	5605us	371	
+gw-262	gw-471	17819346bps	5	6487us	507	
+gw-456	gw-463	10381618bps	9	5976us	295	
+gw-456	leaf-465	1215435bps	82	22554us	35	
+gw-456	gw-471	17854900bps	5	5351us	508	
+gw-456	gw-472	14210082bps	7	7840us	404	
+gw-456	leaf-473	2721139bps	36	29170us	78	
+gw-456	leaf-480	1265191bps	79	63334us	36	
+gw-456	leaf-482	1242992bps	80	32111us	36	
+gw-462	gw-463	14675729bps	6	8048us	417	
+gw-462	leaf-490	2267473bps	44	25671us	65	
+gw-462	leaf-496	1976735bps	50	16841us	57	
+gw-462	leaf-497	2125596bps	47	14345us	61	
+gw-462	leaf-498	1417961bps	70	56930us	41	
+gw-462	leaf-530	1538661bps	64	45266us	44	
+gw-463	leaf-473	1579600bps	63	18912us	45	
+gw-463	leaf-483	2358619bps	42	13502us	68	
+gw-463	gw-493	13304306bps	7	6146us	378	
+gw-463	leaf-500	2439330bps	40	62631us	70	
+gw-463	leaf-530	1914653bps	52	24961us	55	
+leaf-464	gw-493	2630065bps	38	50275us	75	
+gw-466	gw-112	13903982bps	7	6578us	395	
+gw-466	leaf-469	1968663bps	50	63042us	56	
+gw-466	leaf-470	2427967bps	41	17723us	69	
+gw-466	gw-472	18912909bps	5	8022us	538	
+leaf-469	gw-471	1371994bps	72	59090us	39	
+gw-493	leaf-496	1916846bps	52	22756us	55	
+gw-493	leaf-497	1656238bps	60	69387us	48	
+gw-493	leaf-498	1611280bps	62	15306us	46	

@@ -40,6 +40,11 @@
 #include "ns3/ipv4-address.h"
 #include "ns3/error-model.h"
 #include "ns3/constant-position-mobility-model.h"
+#include "ns3/computation-module.h"
+#include "ns3/data-size.h"
+#include "ns3/cpu-size.h"
+#include "ns3/ndnSIM/ndn-cxx/snake/fm/snake-metadata.hpp"
+
 #include "ns3/double.h"
 
 #include "model/ndn-l3-protocol.hpp"
@@ -58,6 +63,7 @@
 #endif
 
 using namespace std;
+using ndn::snake::SnakeMetadata;//< for generating node resources.
 
 namespace ns3 {
 
@@ -79,6 +85,7 @@ AnnotatedTopologyReader::AnnotatedTopologyReader(const std::string& path, double
   m_randY->SetAttribute("Max", DoubleValue(100.0));
 
   SetMobilityModel("ns3::ConstantPositionMobilityModel");
+  SetComputationModel("ns3::SimpleComputationModel");
 }
 
 void
@@ -98,6 +105,11 @@ AnnotatedTopologyReader::SetMobilityModel(const std::string& model)
 {
   NS_LOG_FUNCTION(this << model);
   m_mobilityFactory.SetTypeId(model);
+}
+void AnnotatedTopologyReader::SetComputationModel(const std::string& model)
+{
+  NS_LOG_FUNCTION(this << model);
+  m_computationFactory.SetTypeId(model);
 }
 
 AnnotatedTopologyReader::~AnnotatedTopologyReader()
@@ -149,6 +161,7 @@ AnnotatedTopologyReader::GetLinks() const
 {
   return m_linksList;
 }
+static ComputationHelper computation;
 
 NodeContainer
 AnnotatedTopologyReader::Read(void)
@@ -183,11 +196,11 @@ AnnotatedTopologyReader::Read(void)
       break; // stop reading nodes
 
     istringstream lineBuffer(line);
-    string name, city;
+    string name, comment;
     double latitude = 0, longitude = 0;
     uint32_t systemId = 0;
 
-    lineBuffer >> name >> city >> latitude >> longitude >> systemId;
+    lineBuffer >> name >> comment >> latitude >> longitude >> systemId;
     if (name.empty())
       continue;
 
@@ -199,6 +212,15 @@ AnnotatedTopologyReader::Read(void)
       Ptr<UniformRandomVariable> var = CreateObject<UniformRandomVariable>();
       node = CreateNode(name, var->GetValue(0, 200), var->GetValue(0, 200), systemId);
       // node = CreateNode (name, systemId);
+    }
+    if(comment != "NA"){
+      std::cout << "Init computation model: " << comment << std::endl;
+      SnakeMetadata snakeMetadata(comment.c_str());
+      Ptr<ComputationModel> model = DynamicCast<ComputationModel>(m_computationFactory.Create());
+      node->AggregateObject(model);
+      CPUSize cpuSize(snakeMetadata.getStringValue("cpu"));
+      DataSize memSize(snakeMetadata.getStringValue("mem"));
+      model->SetSystemStateInfo(SysInfo(cpuSize.GetCPUSize(), memSize.GetBitSize()));
     }
   }
 

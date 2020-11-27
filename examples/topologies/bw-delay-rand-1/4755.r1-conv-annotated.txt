@@ -1,0 +1,114 @@
+# any empty lines and lines starting with '#' symbol is ignored
+
+# The file should contain exactly two sections: router and link, each starting with the corresponding keyword
+
+# router section defines topology nodes and their relative positions (e.g., to use in visualizer)
+router
+
+# each line in this section represents one router and should have the following data
+# node  comment     yPos    xPos
+gw-471	NA	0	0
+gw-230	NA	0	0
+gw-463	NA	0	0
+gw-466	NA	0	0
+gw-456	NA	0	0
+gw-493	NA	0	0
+gw-462	NA	0	0
+gw-112	NA	0	0
+gw-472	NA	0	0
+gw-262	NA	0	0
+leaf-115	NA	0	0
+leaf-118	NA	0	0
+leaf-552	NA	0	0
+leaf-465	NA	0	0
+leaf-249	NA	0	0
+leaf-190	NA	0	0
+leaf-191	NA	0	0
+leaf-464	NA	0	0
+leaf-467	NA	0	0
+leaf-553	NA	0	0
+leaf-554	NA	0	0
+leaf-480	NA	0	0
+leaf-482	NA	0	0
+leaf-496	NA	0	0
+leaf-497	NA	0	0
+leaf-473	NA	0	0
+leaf-500	NA	0	0
+leaf-490	NA	0	0
+leaf-498	NA	0	0
+leaf-530	NA	0	0
+leaf-483	NA	0	0
+leaf-113	NA	0	0
+leaf-60	NA	0	0
+leaf-109	NA	0	0
+leaf-91	NA	0	0
+leaf-469	NA	0	0
+leaf-108	NA	0	0
+leaf-470	NA	0	0
+# link section defines point-to-point links between nodes and characteristics of these links
+
+link
+
+# Each line should be in the following format (only first two are required, the rest can be omitted)
+# srcNode   dstNode     bandwidth   metric  delay   queue
+# bandwidth: link bandwidth
+# metric: routing metric
+# delay:  link delay
+# queue:  MaxPackets for transmission queue on the link (both directions)
+leaf-60	gw-112	2887797bps	34	27997us	83	
+leaf-60	gw-472	2670664bps	37	64456us	76	
+leaf-91	gw-112	1154733bps	86	45611us	33	
+leaf-91	gw-262	2667492bps	37	13443us	76	
+leaf-91	gw-472	1000219bps	99	51684us	29	
+leaf-108	gw-112	2073743bps	48	45997us	59	
+leaf-108	gw-472	1182039bps	84	31119us	34	
+leaf-109	gw-112	1422081bps	70	28816us	41	
+leaf-109	gw-472	2890830bps	34	58362us	83	
+leaf-113	gw-112	2878279bps	34	34826us	82	
+leaf-113	gw-262	2682276bps	37	52946us	77	
+leaf-113	gw-472	2600771bps	38	68956us	74	
+leaf-115	gw-112	2497706bps	40	15531us	71	
+leaf-115	gw-472	2012327bps	49	29988us	58	
+leaf-118	gw-112	2992034bps	33	58589us	86	
+leaf-190	gw-112	1404138bps	71	57144us	40	
+leaf-190	gw-472	1797780bps	55	52511us	52	
+leaf-191	gw-112	1234121bps	81	16799us	36	
+leaf-191	gw-472	1284010bps	77	46346us	37	
+gw-230	gw-112	19490208bps	5	9131us	554	
+gw-230	leaf-249	1954522bps	51	32485us	56	
+gw-230	gw-456	11701216bps	8	7010us	333	
+gw-230	leaf-467	1170858bps	85	50287us	34	
+gw-230	gw-471	17837522bps	5	8208us	507	
+gw-230	leaf-552	1113749bps	89	38496us	32	
+gw-230	leaf-553	1784268bps	56	44693us	51	
+gw-230	leaf-554	1178931bps	84	63673us	34	
+leaf-249	gw-472	1842056bps	54	49104us	53	
+gw-262	gw-466	13033192bps	7	5605us	371	
+gw-262	gw-471	17819346bps	5	6487us	507	
+gw-456	gw-463	10381618bps	9	5976us	295	
+gw-456	leaf-465	1215435bps	82	22554us	35	
+gw-456	gw-471	17854900bps	5	5351us	508	
+gw-456	gw-472	14210082bps	7	7840us	404	
+gw-456	leaf-473	2721139bps	36	29170us	78	
+gw-456	leaf-480	1265191bps	79	63334us	36	
+gw-456	leaf-482	1242992bps	80	32111us	36	
+gw-462	gw-463	14675729bps	6	8048us	417	
+gw-462	leaf-490	2267473bps	44	25671us	65	
+gw-462	leaf-496	1976735bps	50	16841us	57	
+gw-462	leaf-497	2125596bps	47	14345us	61	
+gw-462	leaf-498	1417961bps	70	56930us	41	
+gw-462	leaf-530	1538661bps	64	45266us	44	
+gw-463	leaf-473	1579600bps	63	18912us	45	
+gw-463	leaf-483	2358619bps	42	13502us	68	
+gw-463	gw-493	13304306bps	7	6146us	378	
+gw-463	leaf-500	2439330bps	40	62631us	70	
+gw-463	leaf-530	1914653bps	52	24961us	55	
+leaf-464	gw-493	2630065bps	38	50275us	75	
+gw-466	gw-112	13903982bps	7	6578us	395	
+gw-466	leaf-469	1968663bps	50	63042us	56	
+gw-466	leaf-470	2427967bps	41	17723us	69	
+gw-466	gw-472	18912909bps	5	8022us	538	
+leaf-469	gw-471	1371994bps	72	59090us	39	
+gw-493	leaf-496	1916846bps	52	22756us	55	
+gw-493	leaf-497	1656238bps	60	69387us	48	
+gw-493	leaf-498	1611280bps	62	15306us	46	

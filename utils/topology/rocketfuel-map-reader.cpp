@@ -43,6 +43,8 @@
 
 #include "ns3/mobility-model.h"
 
+#include "ns3/ndnSIM/ndn-cxx/snake/fm/snake-metadata.hpp"
+
 #include <regex.h>
 
 #include <boost/foreach.hpp>
@@ -52,9 +54,11 @@
 #include <boost/graph/connected_components.hpp>
 
 #include <iomanip>
+#include <random>
 
 using namespace std;
 using namespace boost;
+using ndn::snake::SnakeMetadata;//< for generating node resources.
 
 NS_LOG_COMPONENT_DEFINE("RocketfuelMapReader");
 
@@ -405,16 +409,19 @@ RocketfuelMapReader::Read(RocketfuelParams params, bool keepOneComponent /*=true
     case BACKBONE:
       Names::Rename(nodeName, "bb-" + nodeName);
       put(vertex_name, m_graph, *v, "bb-" + nodeName);
+      node_comment["bb-" + nodeName] = CreateResourcesJSON(params, type);
       m_backboneRouters.Add(node);
       break;
     case CLIENT:
       Names::Rename(nodeName, "leaf-" + nodeName);
       put(vertex_name, m_graph, *v, "leaf-" + nodeName);
+      node_comment["leaf-" + nodeName] = CreateResourcesJSON(params, type);
       m_customerRouters.Add(node);
       break;
     case GATEWAY:
       Names::Rename(nodeName, "gw-" + nodeName);
       put(vertex_name, m_graph, *v, "gw-" + nodeName);
+      node_comment["gw-" + nodeName] = CreateResourcesJSON(params, type);
       m_gatewayRouters.Add(node);
       break;
     case UNKNOWN:
@@ -462,6 +469,63 @@ RocketfuelMapReader::Read(RocketfuelParams params, bool keepOneComponent /*=true
   return m_nodes;
 }
 
+static std::random_device rd;
+static std::mt19937 gen(rd());
+
+static uint64_t random(uint64_t min, uint64_t max) {
+  std::uniform_int_distribution<uint64_t> dis(min, max );
+  return dis(gen);
+}
+
+CPUSize
+RocketfuelMapReader::CreateCPU(const string& minCPU, const string& maxCPU){
+  std::cout<< "CPU Resource, min=" << static_cast<uint64_t>(lexical_cast<CPUSize>(minCPU).GetCPUSize())
+    << ", max=" << static_cast<uint64_t>(lexical_cast<CPUSize>(maxCPU).GetCPUSize()) << std::endl;
+
+  CPUSize randCPU(random(
+                        static_cast<uint64_t>(lexical_cast<CPUSize>(minCPU).GetCPUSize()),
+                        static_cast<uint64_t>(lexical_cast<CPUSize>(maxCPU).GetCPUSize())));
+  return randCPU;
+}
+
+DataSize
+RocketfuelMapReader::CreateMem(const string& minMem, const string& maxMem){
+  std::cout<< "Mem Resource, min=" << static_cast<uint64_t>(lexical_cast<DataSize>(minMem).GetBitSize())
+     << ", max=" << static_cast<uint64_t>(lexical_cast<DataSize>(maxMem).GetBitSize()) <<std::endl;
+
+  DataSize randMem(random(
+                          static_cast<uint64_t>(lexical_cast<DataSize>(minMem).GetBitSize()),
+                          static_cast<uint64_t>(lexical_cast<DataSize>(maxMem).GetBitSize())));
+  return randMem;
+}
+string
+RocketfuelMapReader::CreateResourcesJSON(const RocketfuelParams& params, node_type_t type){
+  SnakeMetadata snakeMetadata;
+  DataSize memSize;
+  CPUSize cpuSize;
+  switch(type){
+    case BACKBONE:
+      memSize = CreateMem(params.minbMem, params.maxbMem);
+      cpuSize = CreateCPU(params.minbCPU, params.maxbCPU);
+      break;
+    case CLIENT:
+      memSize = CreateMem(params.mincMem, params.maxcMem);
+      cpuSize = CreateCPU(params.mincCPU, params.maxcCPU);
+      break;
+    case GATEWAY:
+      memSize = CreateMem(params.mingMem, params.maxgMem);
+      cpuSize = CreateCPU(params.mincCPU, params.maxcCPU);
+      break;
+    case UNKNOWN:
+      NS_FATAL_ERROR("Should not happen");
+      break;
+  }
+  string memSizeStr = std::to_string(memSize.GetBitSize()) + "b";
+  string cpuFrequencyStr = std::to_string(cpuSize.GetCPUSize()) + "Hz";
+  snakeMetadata.addStringProperty("mem", memSizeStr.c_str());
+  snakeMetadata.addStringProperty("cpu", cpuFrequencyStr.c_str());
+  return snakeMetadata.Serialize();
+}
 const NodeContainer&
 RocketfuelMapReader::GetBackboneRouters() const
 {
@@ -481,13 +545,13 @@ RocketfuelMapReader::GetCustomerRouters() const
 }
 
 static void
-nodeWriter(std::ostream& os, NodeContainer& m)
+nodeWriter(std::ostream& os, NodeContainer& m, map<string, string>& n_comment)
 {
   for (NodeContainer::Iterator node = m.Begin(); node != m.End(); node++) {
     std::string name = Names::FindName(*node);
 
     os << name << "\t"
-       << "NA"
+       << n_comment[name]
        << "\t" << 0 << "\t" << 0 << "\n";
   }
 };
@@ -508,9 +572,9 @@ RocketfuelMapReader::SaveTopology(const std::string& file)
      << "# each line in this section represents one router and should have the following data\n"
      << "# node  comment     yPos    xPos\n";
 
-  nodeWriter(os, m_backboneRouters);
-  nodeWriter(os, m_gatewayRouters);
-  nodeWriter(os, m_customerRouters);
+  nodeWriter(os, m_backboneRouters, node_comment);
+  nodeWriter(os, m_gatewayRouters, node_comment);
+  nodeWriter(os, m_customerRouters, node_comment);
 
   os << "# link section defines point-to-point links between nodes and characteristics of these "
         "links\n"
