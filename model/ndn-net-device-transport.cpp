@@ -116,7 +116,10 @@ NetDeviceTransport::doSend(const Block& packet, const nfd::EndpointId& endpoint)
 
   Ptr<ns3::Packet> ns3Packet = Create<ns3::Packet>();
   ns3Packet->AddHeader(header);
-
+  //FIXME(QJP): processing time logic should be in App level.
+  //issues #25
+  ns3Packet->processingTime = header.getBlock().processingTime;
+  header.getBlock().processingTime = 0;
   // send the NS3 packet
   m_netDevice->Send(ns3Packet, m_netDevice->GetBroadcast(),
                     L3Protocol::ETHERNET_FRAME_TYPE);
