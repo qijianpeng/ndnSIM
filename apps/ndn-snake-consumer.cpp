@@ -46,6 +46,10 @@ NS_LOG_COMPONENT_DEFINE("ndn.SnakeConsumer");
 
 namespace ns3 {
 namespace ndn {
+static ns3::GlobalValue g_O = ns3::GlobalValue ("O",
+                                                     "Time complexity.",
+                                                     ns3::StringValue("n"),
+                                                     ns3::MakeStringChecker());
 namespace snake_util = ::ndn::snake::util;
 NS_OBJECT_ENSURE_REGISTERED(SnakeConsumer);
 
@@ -61,7 +65,7 @@ SnakeConsumer::GetTypeId(void)
 
       .AddAttribute("Prefix", "Name of the Interest", StringValue("/"),
                     MakeNameAccessor(&SnakeConsumer::m_interestName), MakeNameChecker())
-      .AddAttribute("LifeTime", "LifeTime for interest packet", StringValue("3s"),
+      .AddAttribute("LifeTime", "LifeTime for interest packet", StringValue("10s"),
                     MakeTimeAccessor(&SnakeConsumer::m_interestLifeTime), MakeTimeChecker())
 
       .AddAttribute("RetxTimer",
@@ -226,9 +230,13 @@ SnakeConsumer::makeMetadataRequestInterest(shared_ptr<Interest> interest)
   
   /**Mark Function state as unexecuted*/
   snake_util::tryToMarkAsFunction(*interest);
+  interest->setLongLived(false);
   /**Function requirements(JSON formate)*/
   ::ndn::snake::Parameters paras;
-	  paras.Initialize("{\"cpu\":100, \"mem\":20}");
+  ns3::StringValue O;
+  g_O.GetValue(O);
+  std::string str = "{\"O\":\"" + O.Get() + "\", \"S\":\"n\"}";
+	  paras.Initialize(str); //< O: n^2, n, log(n), 1
   Block block = ::ndn::encoding::makeStringBlock(::ndn::tlv::ApplicationParameters,
                                                  paras.Serialize());
   interest->setApplicationParameters(block);
@@ -321,7 +329,7 @@ SnakeConsumer::OnData(shared_ptr<const Data> data)
   // This could be a problem......
   uint32_t seq = data->getName().at(-2).toSequenceNumber();
   NS_LOG_INFO("< DATA for " << seq);
-  if(data->getTag<lp::FunctionTag>()) NS_LOG_DEBUG("Results: " << data->getContent().value());
+  if(data->getTag<lp::FunctionTag>()) NS_LOG_DEBUG("Results size: " << data->getContent().value_size());
   int hopCount = 0;
   auto hopCountTag = data->getTag<lp::HopCountTag>();
   if (hopCountTag != nullptr) { // e.g., packet came from local node's cache

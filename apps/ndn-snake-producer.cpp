@@ -42,9 +42,12 @@ NS_LOG_COMPONENT_DEFINE("ndn.SnakeProducer");
 namespace ns3 {
 namespace ndn {
 namespace snake_util = ::ndn::snake::util;
-
+// static ns3::GlobalValue g_payload = ns3::GlobalValue ("PayloadSize",
+//                                                      "Payload size",
+//                                                      ns3::IntegerValue(1024),
+//                                                      ns3::MakeIntegerChecker());
 NS_OBJECT_ENSURE_REGISTERED(SnakeProducer);
-static  ::ndn::snake::MetadataWrapper metadataWrapper("{\"filetype\":1, \"size\":10240}");
+static  ::ndn::snake::MetadataWrapper metadataWrapper("{\"filetype\":1, \"size\":1024}");
 TypeId
 SnakeProducer::GetTypeId(void)
 {
@@ -199,8 +202,15 @@ SnakeProducer::OnInterest(shared_ptr<const Interest> interest)
   // dataName.append(m_postfix);
   // dataName.appendVersion();
   auto minCostMarkerTagPtr = interest->getTag<lp::MinCostMarkerTag>();
+
   auto data = make_shared<Data>();
-  data->setTag(minCostMarkerTagPtr);
+  if(minCostMarkerTagPtr != nullptr){
+    data->setTag(minCostMarkerTagPtr);
+    NS_LOG_DEBUG("Marking a min cost marker tag into data: " << *(data->getTag<lp::MinCostMarkerTag>()));
+  } else {
+    NS_LOG_DEBUG("Min cost marker is nullptr!!");
+
+  }
   auto functionTag = interest->getTag<lp::FunctionTag>();
   if(functionTag != nullptr){
     data->setTag(functionTag);
@@ -226,7 +236,9 @@ SnakeProducer::OnInterest(shared_ptr<const Interest> interest)
   // }
   data->setName(dataName);
   data->setFreshnessPeriod(::ndn::time::milliseconds(m_freshness.GetMilliSeconds()));
-
+  ::ndn::MetaInfo metaInfo;
+  metaInfo.addAppMetaInfo(::ndn::encoding::makeStringBlock(lp::tlv::MetaData, metadataWrapper.Serialize()));
+  data->setMetaInfo(metaInfo);
   //data->setContent(::ndn::encoding::makeStringBlock(::ndn::tlv::Content, "original data content"));
   uint64_t virtualPayload = metadataWrapper.getMetadata()->getValue<uint64_t>("size");
   data->setContent(make_shared< ::ndn::Buffer>(virtualPayload));
