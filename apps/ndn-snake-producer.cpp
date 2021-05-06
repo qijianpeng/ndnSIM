@@ -34,6 +34,7 @@
 #include "helper/ndn-fib-helper.hpp"
 #include <ndn-cxx/lp/tags.hpp>
 #include <ndn-cxx/util/snake-utils.hpp>
+
 #include <ndn-cxx/meta-info.hpp>
 #include <memory>
 
@@ -42,10 +43,7 @@ NS_LOG_COMPONENT_DEFINE("ndn.SnakeProducer");
 namespace ns3 {
 namespace ndn {
 namespace snake_util = ::ndn::snake::util;
-// static ns3::GlobalValue g_payload = ns3::GlobalValue ("PayloadSize",
-//                                                      "Payload size",
-//                                                      ns3::IntegerValue(1024),
-//                                                      ns3::MakeIntegerChecker());
+
 NS_OBJECT_ENSURE_REGISTERED(SnakeProducer);
 static  ::ndn::snake::MetadataWrapper metadataWrapper("{\"filetype\":1, \"size\":1024}");
 TypeId
@@ -90,7 +88,13 @@ SnakeProducer::StartApplication()
 {
   NS_LOG_FUNCTION_NOARGS();
   App::StartApplication();
+  ns3::UintegerValue dataSize;
+  GlobalValue::GetValueByName("DataSize", dataSize);
+  metadataWrapper.getMetadata()->addProperty<uint64_t>("size", dataSize.Get());
 
+  ns3::StringValue switchRttOpt;
+  GlobalValue::GetValueByName("RttOpt", switchRttOpt);
+  rttOpt = getRttOptStrategy(switchRttOpt.Get());
   FibHelper::AddRoute(GetNode(), m_prefix, m_face, 0);
 }
 
@@ -105,23 +109,26 @@ bool
 SnakeProducer::isRequestForMetadata(shared_ptr<const Interest> interest)
 { 
   NS_LOG_FUNCTION(this << interest);
+  auto minCostMarker = interest->getTag<lp::MinCostMarkerTag>();
   //This should be a problem...
   //Try to use Interest instead in the future.
   // return nullptr == interest->getTag<lp::MinCostMarkerTag>();
-
-  std::string interestName = interest->getName().getSubName(0, 4).toUri();
+  int nameSize = interest->getName().size();
+  std::string interestName = interest->getName().getSubName(0, nameSize - 2 ).toUri();
   Block funcParasBlock = interest->getApplicationParameters();
   std::string funcParas = ::ndn::encoding::readString(funcParasBlock);
   uint64_t hashId = snake_util::hashing(interestName, funcParas, GetNode()->GetId());
   
   auto interestKey = repliedMetadataContiner.find(hashId);
-  if(interestKey == repliedMetadataContiner.end()){//1st incoming interest
+  if(nullptr == minCostMarker && interestKey == repliedMetadataContiner.end()){//1st incoming interest
     NS_LOG_DEBUG("Inserting metadata request: " << hashId << " from : " << interestName << ", " << funcParas << ", " << GetNode()->GetId());
     repliedMetadataContiner.insert(hashId);
     return true;
-  } else { //2nd incoming interest carrying min cost marker.
-    NS_LOG_DEBUG("Erasing metadata: " << hashId << " from : " << interestName << ", " << funcParas << ", " << GetNode()->GetId());
-    repliedMetadataContiner.erase(interestKey);
+  } else{ //2nd incoming interest carrying min cost marker.
+    if(interestKey != repliedMetadataContiner.end()){
+      NS_LOG_DEBUG("Erasing metadata: " << hashId << " from : " << interestName << ", " << funcParas << ", " << GetNode()->GetId());
+      repliedMetadataContiner.erase(interestKey);
+    }
     return false;
   }
 }
@@ -187,11 +194,11 @@ void
 SnakeProducer::OnInterest(shared_ptr<const Interest> interest)
 {
 
-
   if (!m_active)
     return;
   App::OnInterest(interest); // tracing inside
   NS_LOG_FUNCTION(this << interest);
+  
 
   if(isRequestForMetadata(interest)){
     ackMetadata(interest);
@@ -209,7 +216,6 @@ SnakeProducer::OnInterest(shared_ptr<const Interest> interest)
     NS_LOG_DEBUG("Marking a min cost marker tag into data: " << *(data->getTag<lp::MinCostMarkerTag>()));
   } else {
     NS_LOG_DEBUG("Min cost marker is nullptr!!");
-
   }
   auto functionTag = interest->getTag<lp::FunctionTag>();
   if(functionTag != nullptr){
@@ -243,6 +249,18 @@ SnakeProducer::OnInterest(shared_ptr<const Interest> interest)
   uint64_t virtualPayload = metadataWrapper.getMetadata()->getValue<uint64_t>("size");
   data->setContent(make_shared< ::ndn::Buffer>(virtualPayload));
 
+  // logic of execution on producer
+  // if(rttOpt == RTT_OPT::PRODUCER){
+  //     ns3::Ptr<ns3::ComputationModel> cm = m_node->GetObject<ns3::ComputationModel>();
+  //     ns3::SysInfo sysinfo = cm->GetSystemStateInfo();
+  //     Block block = interest->getApplicationParameters();
+  //     std::string functionParameters =  ::ndn::encoding::readString(block);
+  //     //functionName is hard code.
+  //     uint64_t marker = snake_util::hashing("functionName", functionParameters, sysinfo.getUuid());
+  //     data->setTag(make_shared<lp::MinCostMarkerTag>(marker));
+  // } else {
+  // }
+  // end logic of execution on producer
   Signature signature;
   SignatureInfo signatureInfo(static_cast< ::ndn::tlv::SignatureTypeValue>(255));
 

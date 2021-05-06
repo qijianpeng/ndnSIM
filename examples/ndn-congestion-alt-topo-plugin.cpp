@@ -56,7 +56,6 @@ namespace ns3 {
  *
  *     NS_LOG=ndn.Consumer:ndn.Producer ./waf --run=ndn-congestion-alt-topo-plugin
  */
-
 int
 main(int argc, char* argv[])
 {
@@ -95,7 +94,7 @@ main(int argc, char* argv[])
     /////////////////////////////////////////////////////////////////////////////////
 
     ndn::AppHelper consumerHelper("ns3::ndn::ConsumerCbr");
-    consumerHelper.SetAttribute("Frequency", StringValue("10")); // 100 interests a second
+    consumerHelper.SetAttribute("Frequency", StringValue("10")); // 10 interests a second
 
     consumerHelper.SetPrefix(prefix);
     ApplicationContainer consumer = consumerHelper.Install(consumers[i]);
@@ -133,8 +132,13 @@ main(int argc, char* argv[])
 
   // Schedule simulation time and run the simulation
   Simulator::Stop(Seconds(20.0));
+  
+  ndn::L3RateTracer::InstallAll("l3-rate-trace.txt", Seconds(1.0));
+  ns3::L2RateTracer::InstallAll("l2-rate-trace.txt", Seconds(1.0));
   Simulator::Run();
+
   Simulator::Destroy();
+
 
   return 0;
 }

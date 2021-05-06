@@ -113,7 +113,10 @@ BoltConsumer::SendPacket()
   //
   shared_ptr<Name> nameWithSequence = make_shared<Name>(m_interestName);
   nameWithSequence->append("snake");
-  nameWithSequence->appendSequenceNumber(seq);
+  nameWithSequence->append("dataName");
+  nameWithSequence->append("snake");
+  nameWithSequence->append("funcName");
+  nameWithSequence->appendSequenceNumber(seq); //<   /snake/dataName/snake/functionName
   nameWithSequence->append("/Key-TID" + std::to_string(seq));
   //
 

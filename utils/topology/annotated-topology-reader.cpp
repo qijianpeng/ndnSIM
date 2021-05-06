@@ -214,7 +214,7 @@ AnnotatedTopologyReader::Read(void)
       // node = CreateNode (name, systemId);
     }
     if(comment != "NA"){
-      std::cout << "Init computation model: " << comment << std::endl;
+      // std::cout << "Init computation model: " << comment << std::endl;
       SnakeMetadata snakeMetadata(comment.c_str());
       Ptr<ComputationModel> model = DynamicCast<ComputationModel>(m_computationFactory.Create());
       node->AggregateObject(model);

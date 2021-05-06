@@ -17,49 +17,37 @@
  * ndnSIM, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
  **/
 
-#ifndef NDN_SNAKE_BOLT_H
-#define NDN_SNAKE_BOLT_H
-
-// #include "ns3/ndnSIM/model/ndn-common.hpp"
-#include "data-bolt.hpp"
-#include "ns3/application.h"
-#include "ns3/ptr.h"
+#include "ns3/log.h"
 #include "ns3/ndnSIM/helper/ndn-stack-helper.hpp"
 
-namespace ns3 {
+#include "ns3/ndnSIM/apps/snake/ndn-snake-app.hpp"
+#include "snake-bolt.hpp"
+// NS_LOG_COMPONENT_DEFINE("ndn.BoltApp");
 
+namespace ns3 {
 namespace ndn {
 
-/**
- * \ingroup ns3
- * \defgroup ndn-snake-apps NDN applications
- */
-/**
- * @ingroup ndn-snake-apps
- * @brief Base class that all Snake bolt NDN applications should be derived from.
- */
-class SnakeBolt : public Application {
-public:
- 
-  static TypeId
-  GetTypeId();
+NS_OBJECT_ENSURE_REGISTERED(SnakeBoltApp);
 
-  /**
-   * @brief Default constructor
-   */
-  SnakeBolt();
-  ~SnakeBolt();
-
-  // inherited from Application base class. Originally they were private
-  void
-  StartApplication(); ///< @brief Called at time specified by Start
-  void
-  StopApplication(); ///< @brief Called at time specified by Stop
-private:
-	std::unique_ptr<DataBolt> m_instance;
-};
-
+SnakeBoltApp::SnakeBoltApp(){}
+SnakeBoltApp::~SnakeBoltApp(){}
+TypeId
+SnakeBoltApp::GetTypeId(void)
+{
+  static TypeId tid = TypeId("ns3::ndn::SnakeBoltApp")
+    .SetParent<BoltApp>()
+    .AddConstructor<SnakeBoltApp>();
+  return tid;
+}
+void
+SnakeBoltApp::StartApplication(){ ///< @brief Called at time specified by Start
+    m_instance.reset(new ::ns3::ndn::SnakeBolt(GetNode()));
+    m_instance.get()->nodeId = std::to_string(GetNode()->GetId());
+    m_instance->runp();
+}
+void
+SnakeBoltApp::StopApplication(){ ///< @brief Called at time specified by Stop
+  m_instance.reset();
+}
 } // namespace ndn
 } // namespace ns3
-
-#endif // NDN_SNAKE_BOLT_H

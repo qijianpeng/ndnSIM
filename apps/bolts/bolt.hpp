@@ -21,6 +21,8 @@
 #define NDN_BOLT_H
 
 // #include "ns3/ndnSIM/model/ndn-common.hpp"
+#include <ns3/random-variable-stream.h>
+#include "ns3/object.h"
 
 #include "ndn-cxx/name.hpp"
 #include <ndn-cxx/mgmt/nfd/controller.hpp>
@@ -28,12 +30,14 @@
 #include <ndn-cxx/face.hpp>
 #include <ndn-cxx/security/validator-null.hpp>
 #include <ndn-cxx/security/key-chain.hpp>
+#include "ndn-cxx/util/logger.hpp"
 #include <ndn-cxx/util/scheduler.hpp>
-#include <ns3/random-variable-stream.h>
-
 #include <ndn-cxx/util/snake-utils.hpp>
+#include <ndn-cxx/lp/tags.hpp>
 #include <ndn-cxx/snake/fm/snake-metadata.hpp>
 #include "request-container.hpp"
+
+
 
 #include <map>
 #include <chrono>
@@ -56,6 +60,10 @@ using namespace ::ndn::nfd;
 
 typedef std::chrono::high_resolution_clock Clock;
 typedef ndn::snake::SnakeMetadata DataWrapper;
+enum FORWARDING_ACTION:uint8_t{
+  TURN_BACK_ACTION = 0,
+  GO_FORWARD_ACTION = 1,
+};
 /**
  * \ingroup ns3
  * \defgroup ndn-snake-apps NDN applications
@@ -64,7 +72,7 @@ typedef ndn::snake::SnakeMetadata DataWrapper;
  * @ingroup ndn-snake-apps
  * @brief Base class that all Snake bolt NDN applications should be derived from.
  */
-class Bolt{
+class Bolt: public Object{
 public:
   void
   runp()
@@ -120,6 +128,9 @@ private:
   bool
   Islooped(const Interest& interest){
     bool verdict = false;
+    // int keyIndex = interest.hasApplicationParameters()? -2 : -1;
+    // std::string keyTid = interest.getName().at(keyIndex).toUri();
+
     if(loop.find(interest.getNonce()) != loop.end()){
       verdict = true;
     } else {
@@ -127,27 +138,73 @@ private:
     }
     return verdict;
   }
+
+protected:
   void
   preProcessingData(const Interest& interest, const Data& inData, shared_ptr<Data> outData)
 	{
-    Name dataName(Reqs[interest.getNonce()].Oname);
+    Quest* quest =  & Reqs[interest.getNonce()];
+
+    Name dataName(quest->Oname);
+    outData->wireDecode(inData.wireEncode());
     outData->setName(dataName);
-    outData->setFreshnessPeriod(inData.getFreshnessPeriod()); // to be adjusted to the parameter in the user
+    
+    // outData->setFreshnessPeriod(inData.getFreshnessPeriod()); // to be adjusted to the parameter in the user
     ::ndn::snake::util::cloneTags(inData, *outData);
   }
+  void virtual
+  turnbackAfterProcessingData(const Interest& interest, const Data &inData, shared_ptr<Data> outData){
 
+  }
 	void
 	afterProcessingData(const Interest& interest, const Data &inData, shared_ptr<Data> outData){
     //Checking logic
+    Quest* quest = & Reqs[interest.getNonce()];
     std::string outDataName = outData->getName().toUri();
-    BOOST_ASSERT(outDataName == Reqs[interest.getNonce()].Oname);
-    clean(interest.getNonce());
+    BOOST_ASSERT(outDataName == quest->Oname);
     m_keyChain.sign(*outData);
-    a_face.put(*outData);
+    uint64_t sendTime = 0;
+    auto processingTimeTag = outData->getTag<lp::ProcessingTimeTag>();
+    if(nullptr != processingTimeTag){
+      sendTime = *processingTimeTag;
+      outData->removeTag<lp::ProcessingTimeTag>();
+    }
+    clean(interest.getNonce());
+    m_scheduler.schedule(ndn::time::milliseconds(sendTime), [outData, this] {
+            a_face.put(*outData);
+          });
+  }
+  void turnBackPreprocessingInterest(const Interest& currInterest, Interest& outInterest){
+    // Quest r = Reqs[currInterest.getNonce()];
+    // Quest out;
+    // out.Oquest = &r;
+    // Reqs[outInterest.getNonce()] = out;
+
+    int k = (-1)*(currInterest.getName().size());
+    int i;
+    Reqs[currInterest.getNonce()].p1 = currInterest.getName().at(k+1).toUri();
+    Reqs[currInterest.getNonce()].p2 = currInterest.getName().at(k+2).toUri();
+
+    const ::ndn::Name c = currInterest.getName().at(k+3).toUri();
+    const ::ndn::Name nx = c.toUri() ;
+    ::ndn::Name v = nx.toUri();
+    // Getting the name to lookup
+    int lastBound = currInterest.hasApplicationParameters()? -2 : -1;
+    for(i=k+4; i< lastBound; i++){
+      v = v.toUri() + "/" + currInterest.getName().at(i).toUri();  // The name to lookup
+    }
+    Reqs[currInterest.getNonce()].Lname = v.toUri();
+    ::ndn::Name n = "/Trace/S/"+Reqs[currInterest.getNonce()].p2+ v.toUri()+ "/Key-TID" + std::to_string(number()) ;
+    outInterest.setName(n);
+    outInterest.setNonce(currInterest.getNonce());
+    outInterest.setCanBePrefix(currInterest.getCanBePrefix());
+    outInterest.setInterestLifetime(currInterest.getInterestLifetime());
+    outInterest.setLongLived(false);
+    ::ndn::snake::util::cloneTags(currInterest, outInterest);
   }
 
   void 
-	preProcessingInterest(const InterestFilter& filter, const Interest& inInterest, 
+	preProcessingInterest(const Interest& inInterest, 
                                  Interest& outInterest){
     struct Quest r;
     r.First_Arr = steady_clock::now();    // Record arrival time of this request
@@ -163,7 +220,8 @@ private:
     const ::ndn::Name nx = c.toUri() ;
     ::ndn::Name v = nx.toUri();
     // Getting the name to lookup
-    for(i=k+4; i< -1; i++){
+    int lastBound = inInterest.hasApplicationParameters()? -2 : -1;
+    for(i=k+4; i< lastBound; i++){
       v = v.toUri() + "/" + inInterest.getName().at(i).toUri();  // The name to lookup
     }
     Reqs[inInterest.getNonce()].Lname = v.toUri();
@@ -172,13 +230,16 @@ private:
     outInterest.setNonce(inInterest.getNonce());
     outInterest.setCanBePrefix(inInterest.getCanBePrefix());
     outInterest.setInterestLifetime(inInterest.getInterestLifetime());
+    outInterest.setLongLived(inInterest.isLongLived());
     ::ndn::snake::util::cloneTags(inInterest, outInterest);
   }
   void 
-	afterProcessingInterest(const InterestFilter& filter, const Interest& inInterest, 
+	afterProcessingInterest(const Interest& inInterest, 
                                  Interest& outInterest){
     // check logic
-      Reqs[inInterest.getNonce()].Express_time = steady_clock::now();
+      Quest* quest =  & Reqs[inInterest.getNonce()];
+      quest->Express_time = steady_clock::now();
+      // Reqs[inInterest.getNonce()].LFname = outInterest.getName().toUri();
       m_scheduler.schedule(ndn::time::seconds(0), [outInterest, this] {
                 a_face.expressInterest(outInterest,
                                        bind(&Bolt::onData, this,  _1, _2),
@@ -196,9 +257,9 @@ protected:
     }
 
 		ndn::Interest outInterest;
-		preProcessingInterest(filter, interest, outInterest);
+		preProcessingInterest(interest, outInterest);
 		processingInterest(filter, interest, outInterest);
-		afterProcessingInterest(filter, interest, outInterest);
+		afterProcessingInterest(interest, outInterest);
 		return;
   }
  /** \brief processing the incoming \c inInterest.
@@ -215,8 +276,17 @@ protected:
   {
 		shared_ptr<Data> outData = make_shared<Data>();
 		preProcessingData(interest, inData, outData);
-		processingData(interest, Reqs[interest.getNonce()], inData, outData);
-		afterProcessingData(interest, inData, outData);
+		FORWARDING_ACTION action = processingData(interest, Reqs[interest.getNonce()], inData, outData);
+    switch(action){
+        case FORWARDING_ACTION::GO_FORWARD_ACTION: {
+		      afterProcessingData(interest, inData, outData);
+          break;
+        }
+        case FORWARDING_ACTION::TURN_BACK_ACTION:  {
+          turnbackAfterProcessingData(interest, inData, outData);
+          break;
+        }
+    }
   }
 
   /** \brief processing the \c outData according to the \c inData
@@ -225,10 +295,11 @@ protected:
    * \param inData incoming data.
    * \param outData outcoming data.
    */
-  virtual void processingData(const Interest& interest, Quest& quest, const Data &inData, shared_ptr<Data> outData)
+  virtual FORWARDING_ACTION processingData(const Interest& interest, Quest& quest, const Data &inData, shared_ptr<Data> outData)
 	{
 		//default: assign 1 KiB virtual payload.
     outData->setContent(make_shared< ::ndn::Buffer>(1024));
+    return FORWARDING_ACTION::GO_FORWARD_ACTION;
   }
 
   void
@@ -370,7 +441,10 @@ protected:
 
     bind([]{ std::cout << "failure\n";}), options);
   }
-
+  const Quest getQuest(uint32_t nonce)
+  {
+    return Reqs[nonce];
+  }
 private:
   struct parameters{
     ndn::Name name;

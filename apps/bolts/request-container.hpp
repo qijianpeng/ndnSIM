@@ -40,12 +40,14 @@ using namespace std::chrono;
     std::string p2;
     std::string Oname;
     std::string Lname;
+    std::string LFname;
     std::string Reply;
     std::vector<uint64_t> mhops; // multipath's possible next hops
     std::map<std::string, std::string> m_reply; //multi path replies
     std::map<std::string, steady_clock::time_point> m_exptime; //multi path express
     std::map<std::string, steady_clock::time_point> m_reptime; //multi path replies
     std::map<std::string, double> m_over; //multi path replies
+    Quest* Oquest = 0;
   };
 }
 }

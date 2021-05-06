@@ -104,25 +104,47 @@ int main (int argc, char**argv)
   RocketfuelParams params;
   params.clientNodeDegrees = clientNodeDegrees;
   params.averageRtt = 0.25; // 250ms
-  //parameters for links Backbone<->Backbone
-  params.minb2bBandwidth = "40Mbps";
-  params.minb2bDelay = "5ms";
+  // //parameters for links Backbone<->Backbone
+  // params.minb2bBandwidth = "40Mbps";
+  // params.minb2bDelay = "5ms";
 
-  params.maxb2bBandwidth = "100Mbps";
-  params.maxb2bDelay = "10ms";
+  // params.maxb2bBandwidth = "100Mbps";
+  // params.maxb2bDelay = "10ms";
+
+  // //parameters for links Backbone<->Gateway and Gateway <-> Gateway
+  // params.minb2gBandwidth = "10Mbps";
+  // params.minb2gDelay = "5ms";
+
+  // params.maxb2gBandwidth = "20Mbps";
+  // params.maxb2gDelay = "10ms";
+
+  // //parameters for links Gateway <-> Customer
+  // params.ming2cBandwidth ="1Mbps";
+  // params.ming2cDelay = "70ms";
+
+  // params.maxg2cBandwidth ="3Mbps";
+  // params.maxg2cDelay = "10ms";
+  
+  /**Productive bandwidth*/
+  //parameters for links Backbone<->Backbone
+  params.minb2bBandwidth = "10Mbps";
+  params.minb2bDelay = "15ms";
+
+  params.maxb2bBandwidth = "40Mbps";
+  params.maxb2bDelay = "20ms";
 
   //parameters for links Backbone<->Gateway and Gateway <-> Gateway
-  params.minb2gBandwidth = "10Mbps";
-  params.minb2gDelay = "5ms";
+  params.minb2gBandwidth = "20Mbps";
+  params.minb2gDelay = "10ms";
 
-  params.maxb2gBandwidth = "20Mbps";
-  params.maxb2gDelay = "10ms";
+  params.maxb2gBandwidth = "40Mbps";
+  params.maxb2gDelay = "15ms";
 
   //parameters for links Gateway <-> Customer
-  params.ming2cBandwidth ="1Mbps";
-  params.ming2cDelay = "70ms";
+  params.ming2cBandwidth ="40Mbps";
+  params.ming2cDelay = "1ms";
 
-  params.maxg2cBandwidth ="3Mbps";
+  params.maxg2cBandwidth ="100Mbps";
   params.maxg2cDelay = "10ms";
 
   params.maxbCPU = "4GHz";

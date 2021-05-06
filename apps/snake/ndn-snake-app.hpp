@@ -17,38 +17,49 @@
  * ndnSIM, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
  **/
 
-#include "ndn-snake-bolt.hpp"
-#include "ns3/log.h"
-#include "ns3/assert.h"
-#include "ns3/packet.h"
-#include "model/ndn-l3-protocol.hpp"
+#ifndef NDN_SNAKE_APP_H
+#define NDN_SNAKE_APP_H
 
-// NS_LOG_COMPONENT_DEFINE("ndn.SnakeBolt");
+#include "ns3/ptr.h"
+#include "ns3/callback.h"
+#include "ns3/traced-callback.h"
+#include "ns3/application.h"
 
+// #include "ns3/ndnSIM/model/ndn-common.hpp"
+#include "ns3/ndnSIM/model/ndn-common.hpp"
+#include "ns3/ndnSIM/apps/ndn-bolt-app.hpp"
 namespace ns3 {
+
 namespace ndn {
 
-NS_OBJECT_ENSURE_REGISTERED(SnakeBolt);
-SnakeBolt::SnakeBolt(){}
-SnakeBolt::~SnakeBolt(){}
-TypeId
-SnakeBolt::GetTypeId(void)
-{
-  static TypeId tid = TypeId("ns3::ndn::SnakeBolt")
-    .SetParent<Application>()
-    .AddConstructor<SnakeBolt>();
-  return tid;
-}
-void
-SnakeBolt::StartApplication(){ ///< @brief Called at time specified by Start
-    std::cout << "DataBolt::Starting..." << std::endl;
-    m_instance.reset(new DataBolt(ndn::StackHelper::getKeyChain()));
-    m_instance.get()->Dname = std::to_string(GetNode()->GetId());
-    m_instance->runp();
-}
-void
-SnakeBolt::StopApplication(){ ///< @brief Called at time specified by Stop
-  m_instance.reset();
-}
+/**
+ * \ingroup ns3
+ * \defgroup ndn-snake-apps NDN applications
+ */
+/**
+ * @ingroup ndn-snake-apps
+ * @brief Base class that all Snake bolt NDN applications should be derived from.
+ */
+class SnakeBoltApp : public BoltApp {
+public:
+ 
+  static TypeId
+  GetTypeId();
+
+  /**
+   * @brief Default constructor
+   */
+  SnakeBoltApp();
+  ~SnakeBoltApp();
+
+  // inherited from Application base class. Originally they were private
+  void
+  StartApplication(); ///< @brief Called at time specified by Start
+  void
+  StopApplication(); ///< @brief Called at time specified by Stop
+};
+
 } // namespace ndn
 } // namespace ns3
+
+#endif // NDN_BOLT_APP_H

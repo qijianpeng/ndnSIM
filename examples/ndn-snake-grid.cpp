@@ -56,9 +56,9 @@ int
 main(int argc, char* argv[])
 {
   // Setting default parameters for PointToPoint links and channels
-  Config::SetDefault("ns3::PointToPointNetDevice::DataRate", StringValue("1Mbps"));
+  Config::SetDefault("ns3::PointToPointNetDevice::DataRate", StringValue("200Mbps"));
   Config::SetDefault("ns3::PointToPointChannel::Delay", StringValue("10ms"));
-  Config::SetDefault("ns3::QueueBase::MaxSize", StringValue("10p"));
+  Config::SetDefault("ns3::QueueBase::MaxSize", StringValue("20p"));
 
   // Read optional command-line parameters (e.g., enable visualizer with ./waf --run=<> --visualize
   CommandLine cmd;
@@ -82,6 +82,15 @@ main(int argc, char* argv[])
   // Install NDN stack on all nodes
   ndn::StackHelper ndnHelper;
   ndnHelper.SetDefaultRoutes(true);
+  Config::Set("/NodeList/0/$ns3::ComputationModel/SystemStateInfo", SysInfoValue(SysInfo(2000, 8000)));
+  Config::Set("/NodeList/1/$ns3::ComputationModel/SystemStateInfo", SysInfoValue(SysInfo(2000, 8000)));
+  Config::Set("/NodeList/2/$ns3::ComputationModel/SystemStateInfo", SysInfoValue(SysInfo(2000, 8000)));
+  Config::Set("/NodeList/3/$ns3::ComputationModel/SystemStateInfo", SysInfoValue(SysInfo(2000, 8000)));
+  Config::Set("/NodeList/4/$ns3::ComputationModel/SystemStateInfo", SysInfoValue(SysInfo(20000, 50000)));
+  Config::Set("/NodeList/5/$ns3::ComputationModel/SystemStateInfo", SysInfoValue(SysInfo(20000, 50000)));
+  Config::Set("/NodeList/6/$ns3::ComputationModel/SystemStateInfo", SysInfoValue(SysInfo(20000, 80000)));
+  Config::Set("/NodeList/7/$ns3::ComputationModel/SystemStateInfo", SysInfoValue(SysInfo(400, 1000)));
+  Config::Set("/NodeList/8/$ns3::ComputationModel/SystemStateInfo", SysInfoValue(SysInfo(200, 800)));
 
   ndnHelper.InstallAll();
 
@@ -102,12 +111,12 @@ main(int argc, char* argv[])
 
   ndn::AppHelper consumerHelper("ns3::ndn::SnakeConsumerCbr");
   consumerHelper.SetPrefix(prefix);
-  consumerHelper.SetAttribute("Frequency", StringValue("100")); // 100 interests a second
+  consumerHelper.SetAttribute("Frequency", StringValue("10")); // 100 interests a second
   consumerHelper.Install(consumerNodes);
 
   ndn::AppHelper producerHelper("ns3::ndn::SnakeProducer");
    producerHelper.SetPrefix(prefix);
-  producerHelper.SetAttribute("PayloadSize", StringValue("1024"));
+  producerHelper.SetAttribute("PayloadSize", StringValue("10240"));
   producerHelper.Install(producer);
 
   // Add /prefix origins to ndn::GlobalRouter
@@ -116,7 +125,7 @@ main(int argc, char* argv[])
   // Calculate and install FIBs
   ndn::GlobalRoutingHelper::CalculateRoutes();
 
-  Simulator::Stop(Seconds(20.0));
+  Simulator::Stop(Seconds(10.0));
 
   Simulator::Run();
   Simulator::Destroy();

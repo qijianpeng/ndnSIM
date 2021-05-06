@@ -57,8 +57,8 @@ public:
   StartApplication(); ///< @brief Called at time specified by Start
   void
   StopApplication(); ///< @brief Called at time specified by Stop
-private:
-	std::unique_ptr<::ns3::ndn::SimpleTraceBolt> m_instance;
+protected:
+	std::unique_ptr<::ns3::ndn::Bolt> m_instance;
 };
 
 } // namespace ndn

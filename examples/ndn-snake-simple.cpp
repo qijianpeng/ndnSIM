@@ -63,7 +63,7 @@ namespace ns3 {
  *
  * To run scenario and see what is happening, use the following command:
  *
- *     NS_LOG=ndn.Consumer:ndn.Producer ./waf --run=ndn-simple
+ *     NS_LOG=ndn.Consumer:ndn.Producer ./waf --run=ndn-snake-simple
  */
 
 int
@@ -84,7 +84,7 @@ main(int argc, char* argv[])
   //Installing computation model.
   ComputationHelper computation;
   computation.Install(nodes);
-  Config::Set("/NodeList/0/$ns3::ComputationModel/SystemStateInfo", SysInfoValue(SysInfo(100, 100)));
+  Config::Set("/NodeList/0/$ns3::ComputationModel/SystemStateInfo", SysInfoValue(SysInfo(2000, 8000)));
   Config::Set("/NodeList/1/$ns3::ComputationModel/SystemStateInfo", SysInfoValue(SysInfo(10000, 10000)));
   Config::Set("/NodeList/2/$ns3::ComputationModel/SystemStateInfo", SysInfoValue(SysInfo(2000, 8000)));
   // Connecting nodes using two links
@@ -96,8 +96,11 @@ main(int argc, char* argv[])
   ndnHelper.SetDefaultRoutes(true);
   ndnHelper.InstallAll();
   // Choosing forwarding strategy
-  ndn::StrategyChoiceHelper::InstallAll("/", "/localhost/nfd/strategy/multicast");
-
+  // ndn::StrategyChoiceHelper::InstallAll("/", "/localhost/nfd/strategy/multicast");
+  ndn::StrategyChoiceHelper::InstallAll("/", "/localhost/nfd/strategy/best-route");
+  //bandwidth
+  Config::Set("/NodeList/0/DeviceList/0/$ns3::PointToPointNetDevice/DataRate", DataRateValue(DataRate("500kbps")));
+  Config::Set("/NodeList/1/DeviceList/0/$ns3::PointToPointNetDevice/DataRate", DataRateValue(DataRate("500kbps")));
   // Installing applications
 
   // Consumer
@@ -118,7 +121,7 @@ main(int argc, char* argv[])
   producerHelper.SetAttribute("PayloadSize", StringValue("1024"));
   producerHelper.Install(nodes.Get(2)); // last node
 
-  Simulator::Stop(Seconds(20.0));
+  Simulator::Stop(Seconds(10.0));
 
   Simulator::Run();
   Simulator::Destroy();

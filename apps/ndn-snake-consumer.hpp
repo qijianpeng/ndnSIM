@@ -118,7 +118,8 @@ public:
 public:
   typedef void (*LastRetransmittedInterestDataDelayCallback)(Ptr<App> app, uint32_t seqno, Time delay, int32_t hopCount);
   typedef void (*FirstInterestDataDelayCallback)(Ptr<App> app, uint32_t seqno, Time delay, uint32_t retxCount, int32_t hopCount);
-
+  typedef void (*OutInterestDelayCallback)(Interest interest, Ptr<Face> face);
+  typedef void (*InDataDelayCallback)(Data data, Ptr<Face> face);
 protected:
   // from App
   virtual void
@@ -232,6 +233,8 @@ protected:
   TracedCallback<Ptr<App> /* app */, uint32_t /* seqno */, Time /* delay */,
                  uint32_t /*retx count*/, int32_t /*hop count*/> m_firstInterestDataDelay;
 
+  TracedCallback<Interest, Ptr<Face>> m_outInterestDelay;
+  TracedCallback<Data, Ptr<Face>> m_inDataDelay;
   /// @endcond
 };
 

@@ -93,7 +93,7 @@ main(int argc, char* argv[])
   // Calculate and install FIBs
   ndn::GlobalRoutingHelper::CalculateRoutes();
 
-  Simulator::Stop(Seconds(600.0));
+  Simulator::Stop(Seconds(10.0));
   std::string timestamp = std::to_string(std::time(nullptr));
   ns3::StringValue oValue;
   GlobalValue::GetValueByName ("O", oValue);

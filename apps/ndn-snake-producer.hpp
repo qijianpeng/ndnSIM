@@ -24,6 +24,7 @@
 
 #include "ndn-app.hpp"
 #include "ns3/ndnSIM/model/ndn-common.hpp"
+#include <ndn-cxx/snake/optimize-strategy.hpp>
 
 #include "ns3/nstime.h"
 #include "ns3/ptr.h"
@@ -69,7 +70,8 @@ private:
   Name m_postfix;
   uint32_t m_virtualPayloadSize;
   Time m_freshness;
-
+  RTT_OPT rttOpt;
+  
   uint32_t m_signature;
   Name m_keyLocator;
   std::set<uint64_t> repliedMetadataContiner; //< hash values from interest->getName();

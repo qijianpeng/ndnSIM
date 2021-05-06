@@ -403,7 +403,7 @@ RocketfuelMapReader::Read(RocketfuelParams params, bool keepOneComponent /*=true
   for (tie(v, endv) = vertices(m_graph); v != endv; v++) {
     string nodeName = get(vertex_name, m_graph, *v);
     Ptr<Node> node = CreateNode(nodeName, 0);
-
+    
     node_type_t type = get(vertex_rank, m_graph, *v);
     switch (type) {
     case BACKBONE:
@@ -638,8 +638,9 @@ public:
   void
   operator()(std::ostream& out, const VertexOrEdge& v) const
   {
-    // out << "[label=\"" << names[v] << "\",style=filled,fillcolor=\"" << colors[v] << "\"]";
-    out << "[shape=\"circle\",width=0.1,label=\"\",style=filled,fillcolor=\"" << colors[v] << "\"]";
+    out << "[label=\"" << names[v] << "\",style=filled,fillcolor=\"" << colors[v] << "\"]";
+    // out << "[shape=\"circle\",width=0.1,label=\"\",style=filled,fillcolor=\"" << colors[v] << "\"]";
+    // out << "[label=\"" << names[v] <<  "\", shape=\"circle\",width=0.1,label=\"\",style=filled,fillcolor=\"" << colors[v] << "\"]";
   }
 
 private:

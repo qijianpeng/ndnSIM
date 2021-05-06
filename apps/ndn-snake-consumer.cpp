@@ -41,7 +41,7 @@
 
 #include <ndn-cxx/util/snake-utils.hpp>
 #include "snake-parameters.hpp"
-
+#include <ndn-cxx/snake/optimize-strategy.hpp>
 NS_LOG_COMPONENT_DEFINE("ndn.SnakeConsumer");
 
 namespace ns3 {
@@ -65,7 +65,7 @@ SnakeConsumer::GetTypeId(void)
 
       .AddAttribute("Prefix", "Name of the Interest", StringValue("/"),
                     MakeNameAccessor(&SnakeConsumer::m_interestName), MakeNameChecker())
-      .AddAttribute("LifeTime", "LifeTime for interest packet", StringValue("10s"),
+      .AddAttribute("LifeTime", "LifeTime for interest packet", StringValue("1000s"),
                     MakeTimeAccessor(&SnakeConsumer::m_interestLifeTime), MakeTimeChecker())
 
       .AddAttribute("RetxTimer",
@@ -199,12 +199,14 @@ SnakeConsumer::SendPacket()
   if(seq == std::numeric_limits<uint32_t>::max()) return;
 
   shared_ptr<Name> nameWithSequence = make_shared<Name>(m_interestName);
+  nameWithSequence->append("snake");
   std::string dataName = "dataName";
   nameWithSequence->append(dataName);
   nameWithSequence->append("snake");
   std::string functionName = "functionName";
   nameWithSequence->append(functionName);
   nameWithSequence->appendSequenceNumber(seq);
+  nameWithSequence->append("/Key-TID" + std::to_string(seq));
 
   shared_ptr<Interest> interest = make_shared<Interest>();
   interest->setNonce(m_rand->GetValue(0, std::numeric_limits<uint32_t>::max()));
@@ -214,7 +216,8 @@ SnakeConsumer::SendPacket()
   interest->setInterestLifetime(interestLifeTime);
 
   makeMetadataRequestInterest(interest);
-  
+
+
   NS_LOG_INFO("> Interest for " << seq);
   WillSendOutInterest(seq);
 
@@ -230,7 +233,7 @@ SnakeConsumer::makeMetadataRequestInterest(shared_ptr<Interest> interest)
   
   /**Mark Function state as unexecuted*/
   snake_util::tryToMarkAsFunction(*interest);
-  interest->setLongLived(false);
+  interest->setLongLived(true);
   /**Function requirements(JSON formate)*/
   ::ndn::snake::Parameters paras;
   ns3::StringValue O;
@@ -253,12 +256,7 @@ void
   shared_ptr<const Data> metadata)
 {
   auto minCostMarkerTagPtr = metadata->getTag<lp::MinCostMarkerTag>();
-  // if(nullptr == minCostMarkerTagPtr) {
-  //   return false;
-  // }
-  //TODO Using the established session is correct way.
-  // auto combinedSessionIdPtr = data.getTag<lp::SessionTag>();
-  // Name sessionName = snake_util::recombineNameWithSessionId(data->getName(), *combinedSessionIdPtr);
+
   /**Transfer min cost marker tag*/
   minCostNotifyInterest->setTag(minCostMarkerTagPtr);
   /**Mark Function state as unexecuted*/
@@ -297,12 +295,13 @@ SnakeConsumer::ackSnakeMetadata(shared_ptr<const Data> metadata)
 
   // uint32_t seq = getSeq();
   // if(seq == 0) return;
-
-  ::ndn::Name namePrefix = metadata->getName().getSubName(0,4); //< /dataname/snake/functionname/seq
+  int nameSize = metadata->getName().size();
+  ::ndn::Name namePrefix = metadata->getName().getSubName(0, nameSize-1); //< ndn:://snake/dataName/snake/functionName/Seq#/Key-TID#/ApplicationParameters
   // shared_ptr<Name> nameWithSequence = make_shared<Name>(namePrefix);
 
   shared_ptr<Interest> interest = make_shared<Interest>();
   interest->setNonce(m_rand->GetValue(0, std::numeric_limits<uint32_t>::max()));
+
   interest->setName(namePrefix);
   interest->setCanBePrefix(true);
   time::milliseconds interestLifeTime(m_interestLifeTime.GetMilliSeconds());
@@ -327,9 +326,11 @@ SnakeConsumer::OnData(shared_ptr<const Data> data)
   // NS_LOG_INFO ("Received content object: " << boost::cref(*data));
 
   // This could be a problem......
-  uint32_t seq = data->getName().at(-2).toSequenceNumber();
+  uint32_t seq = data->getName().at(-3).toSequenceNumber();
   NS_LOG_INFO("< DATA for " << seq);
+  // std::cout << "< DATA for " << seq;
   if(data->getTag<lp::FunctionTag>()) NS_LOG_DEBUG("Results size: " << data->getContent().value_size());
+  std::cout << data->getContent().value() << std::endl;
   int hopCount = 0;
   auto hopCountTag = data->getTag<lp::HopCountTag>();
   if (hopCountTag != nullptr) { // e.g., packet came from local node's cache

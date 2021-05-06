@@ -52,7 +52,8 @@ main(int argc, char* argv[])
   cmd.Parse(argc, argv);
 
   AnnotatedTopologyReader topologyReader("", 25);
-  topologyReader.SetFileName("src/ndnSIM/examples/topologies/topo-6-node.txt");
+  //topologyReader.SetFileName("src/ndnSIM/examples/topologies/topo-6-node.txt");
+  topologyReader.SetFileName("src/ndnSIM/examples/topologies/bw-delay-node-resource-rand-1/1221.r1-conv-annotated.txt");
   topologyReader.Read();
 
   // Install NDN stack on all nodes
@@ -69,11 +70,17 @@ main(int argc, char* argv[])
   ndnGlobalRoutingHelper.InstallAll();
 
   // Getting containers for the consumer/producer
-  Ptr<Node> consumer1 = Names::Find<Node>("Src1");
-  Ptr<Node> consumer2 = Names::Find<Node>("Src2");
+  // Ptr<Node> consumer1 = Names::Find<Node>("Src1");
+  // Ptr<Node> consumer2 = Names::Find<Node>("Src2");
 
-  Ptr<Node> producer1 = Names::Find<Node>("Dst1");
-  Ptr<Node> producer2 = Names::Find<Node>("Dst2");
+  // Ptr<Node> producer1 = Names::Find<Node>("Dst1");
+  // Ptr<Node> producer2 = Names::Find<Node>("Dst2");
+  
+  Ptr<Node> consumer1 = Names::Find<Node>("leaf-124");
+  Ptr<Node> consumer2 = Names::Find<Node>("leaf-125");
+
+  Ptr<Node> producer1 = Names::Find<Node>("leaf-4118");
+  Ptr<Node> producer2 = Names::Find<Node>("leaf-4114");
 
   ndn::AppHelper consumerHelper("ns3::ndn::ConsumerCbr");
   consumerHelper.SetAttribute("Frequency", StringValue("100")); // 100 interests a second

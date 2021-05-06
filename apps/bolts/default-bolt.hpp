@@ -39,10 +39,11 @@ public:
 		return originStr + "[" + nodeId + "'s data]";
   }
 
-  void processingData(const Interest& interest, Quest& quest, const Data &inData, shared_ptr<Data> outData) override
+  FORWARDING_ACTION processingData(const Interest& interest, Quest& quest, const Data &inData, shared_ptr<Data> outData) override
 	{
 		std::string newDataStr = createData(interest, inData);
     outData->setContent(reinterpret_cast<const uint8_t*>(newDataStr.c_str()), newDataStr.size());
+    return FORWARDING_ACTION::GO_FORWARD_ACTION;
   }
   /** \brief processing the incoming \c inInterest.
    * 
